@@ -1,4 +1,4 @@
-# Indian-Financial-Market-Analysis
+# Indian Financial Market Analysis
 
 ## Introduction
 Create an application which will act as a daily stop for analyzing Indian markets. This tool should provide an ability to the end user to plot various scripts listed on the Indian exchanges and do analysis on those scripts. The parameters to the API&#39;s should not be static and should change on the basis of user input. Modeling should be generic and have an ability to extend on the basis of user requirement.
