@@ -8,6 +8,7 @@ Run the server.
 ```
 python backend_server.py 
 ```
+Index page is at http://127.0.0.1:5000/
 ## Current Work
 1. Implemented backend for API 1 according to Flask - Jquery design pattern.
 2. Implementation of frontend for API 1 is almost done.
