@@ -1,4 +1,20 @@
 # Indian Financial Market Analysis
+## Steps To Run 
+Install NSEpy.
+```
+pip install nsepy 
+```
+Run the server.
+```
+python backend_server.py 
+```
+## Current Work
+1. Implemented backend for API 1 according to Flask - Jquery design pattern.
+2. Implementation of frontend for API 1 is almost done.
+
+![2](screenshots/api1.png)
+
+***
 
 ## Introduction
 Create an application which will act as a daily stop for analyzing Indian markets. This tool should provide an ability to the end user to plot various scripts listed on the Indian exchanges and do analysis on those scripts. The parameters to the API&#39;s should not be static and should change on the basis of user input. Modeling should be generic and have an ability to extend on the basis of user requirement.
