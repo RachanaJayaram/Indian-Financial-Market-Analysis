@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+
+<head>
+    <title>Indian Financial Market Analysis - API 1</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="">
+
+    <script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="{{url_for('static', filename='graph1.js')}}"></script>
+</head>
+
+<body>
+    <div id="form-div">
+        <form id="input-form">
+            <h3>Enter Input</h3>
+            The complete list of the 144 indices/scripts maintained by NSE along with their associated symbols is listed
+            <a href="https://www1.nseindia.com/products/content/derivatives/equities/fo_underlying_home.htm">here</a> in
+            NSE India’s website.
+            <br>
+            Enter Script Symbol:
+            <br>
+            <input type="text" name="symbol" id="symbol">
+            <br>
+            <br>
+
+            Enter Start Date:
+            <br>
+            <input type="date" name="start" id="start">
+            <br>
+            <br>
+
+            Enter End Date:
+            <br>
+            <input type="date" name="end" id="end">
+            <br>
+            <br>
+
+            <button id="submit">Submit</button>
+            <br>
+            <br>
+        </form>
+    </div>
+    <hr>
+    <div id="graph-div">
+
+    </div>
+</body>
+
+</html>
