@@ -28,7 +28,7 @@ Index page is at http://127.0.0.1:5000/
 3. Implemented backend for API 2 according to Flask - Jquery design pattern.
 4. Implementation of frontend for API 2 is almost done. 
 
-![4](screenshots/api2.png)
+![4](screenshots/Api2.png)
 
 ***
 
