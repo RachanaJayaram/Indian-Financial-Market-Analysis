@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+
+<head>
+    <title>Indian Financial Market Analysis - API 1</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="">
+
+    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <script src="{{url_for('static', filename='graph2.js')}}"></script>
+</head>
+
+<body class="container">
+    <div id="form-div">
+        <form id="input-form">
+            <h3>Enter Input</h3>
+            
+            Enter Start Date:
+            <br>
+            <input type="date" name="start" id="start">
+            <br>
+            <br>
+
+            Enter End Date:
+            <br>
+            <input type="date" name="end" id="end">
+            <br>
+            <br>
+
+            <button id="submit">Submit</button>
+            <br>
+            <br>
+        </form>
+    </div>
+    <hr>
+    <div id="graph-div">
+        <div class="row">
+            <div class="col-sm-6" id="col1">
+                
+            </div>
+            <div class="col-sm-6" id="col2">
+                 
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
