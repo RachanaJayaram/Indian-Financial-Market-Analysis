@@ -99,13 +99,14 @@ def api_2():
     for symbol in symbols:
         nse_df = get_history(symbol=symbol, start=start_date, end=end_date)
         close=nse_df["Close"].tolist()
-        print(close)
+        if(symbol=="PVR"):
+            print(close)
         current_falling=0
         if(len(close)>1):
             for day in range(len(close[:-1])):
                 if(close[day]>close[day+1]):
                     current_falling+=1
-            if(len(close)==current_falling):
+            if(len(close)-1==current_falling):
                 falling.append(symbol)
             elif(current_falling==0):
                 growing.append(symbol)
