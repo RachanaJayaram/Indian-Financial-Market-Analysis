@@ -4,6 +4,16 @@ Install NSEpy.
 ```
 pip install nsepy 
 ```
+Install BeautifulSoup for python3 (for webscraping)
+```
+pip3 install beautifulsoup4
+```
+Install Selenium and chrome webdriver(for JS loaded web scraping)
+```
+pip install selenium
+sudo apt-get install chromium-chromedriver
+```
+
 Run the server.
 ```
 python backend_server.py 
@@ -14,6 +24,11 @@ Index page is at http://127.0.0.1:5000/
 2. Implementation of frontend for API 1 is almost done.
 
 ![2](screenshots/api1.png)
+
+3. Implemented backend for API 2 according to Flask - Jquery design pattern.
+4. Implementation of frontend for API 2 is almost done. 
+
+![4](screenshots/api2.png)
 
 ***
 
