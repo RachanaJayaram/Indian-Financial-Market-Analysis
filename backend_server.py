@@ -7,17 +7,22 @@ from nsepy import get_history
 from bs4 import BeautifulSoup
 from selenium import webdriver
 import time
+import redis
+import json
 
 from backend_helper import extract_date, format_date
 import constants
 
 app = Flask(__name__)
 
-# Web scraping for getting the symbols #
+# Web scraping for getting the symbols 
+
 url="https://www1.nseindia.com/products/content/derivatives/equities/fo_underlying_home.htm"
 
-#do 'whereis chromedriver' and put the right path here
-driver = webdriver.Chrome("/usr/bin/chromedriver")
+#for ubuntu, do 'whereis chromedriver' and put the right path here
+#driver = webdriver.Chrome("/usr/bin/chromedriver")
+#For Windows, add it to PATH variable
+driver = webdriver.Chrome()
 driver.get(url)
 
 soup = BeautifulSoup(driver.page_source, "html.parser")
@@ -66,7 +71,7 @@ def api_1():
 
     start_date = extract_date(start)
     end_date = extract_date(end)
-
+    print(start_date)
     nse_df = get_history(symbol=symbol, start=start_date, end=end_date)
 
     return_data = {}
@@ -94,6 +99,20 @@ def api_2():
     growing=[]
     falling=[]
 
+    r = redis.Redis(host='localhost', port=6379, db=0, charset="utf-8", decode_responses=True)
+
+    #Start and End date are concatenated to form the hash
+    key_date = str(start_date)+str(end_date)
+    #Checking if hash exists in cache 
+    get_cachedvalue = r.hgetall(key_date)
+
+    if(get_cachedvalue):
+        print("Cache 1 hit")
+        falling = get_cachedvalue["falling"].split(";")
+        growing = get_cachedvalue["growing"].split(";")
+        print("falling:",falling,len(falling),"growing:",growing,len(growing))
+        return jsonify(result = {"falling" : falling, "growing" : growing})
+    
     print("starting check")
 
     for symbol in symbols:
@@ -111,13 +130,17 @@ def api_2():
             elif(current_falling==0):
                 growing.append(symbol)
 
+    growing1 = growing
+    falling1 = falling
+    falling_string = ";".join(falling1)
+    growing_string = ";".join(growing1)
+    to_add = {"falling" : falling_string, "growing" : growing_string}
+    #Add new set of values to the cache
+    r.hmset(key_date,to_add)
 
     print("falling:",falling,len(falling),"growing:",growing,len(growing))
     return jsonify(result = {"falling" : falling, "growing" : growing})
-
-
-
-
+    
 
 if __name__ == "__main__":
     app.run(constants.URL, constants.PORT, debug=True,use_reloader=False)
