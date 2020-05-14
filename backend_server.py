@@ -9,34 +9,39 @@ from selenium import webdriver
 import time
 import redis
 import json
+from datetime import date
+import datetime
 
 from backend_helper import extract_date, format_date
 import constants
 
 app = Flask(__name__)
 
-# Web scraping for getting the symbols 
+# Web scraping for getting the symbols #
+#url="https://www1.nseindia.com/products/content/derivatives/equities/fo_underlying_home.htm"
 
-url="https://www1.nseindia.com/products/content/derivatives/equities/fo_underlying_home.htm"
+#do 'whereis chromedriver' and put the right path here
+#"C:/bin/chromedriver"
+#driver = webdriver.Chrome("C:/bin/chromedriver")
+#driver.get(url)
 
-#for ubuntu, do 'whereis chromedriver' and put the right path here
-#driver = webdriver.Chrome("/usr/bin/chromedriver")
-#For Windows, add it to PATH variable
-driver = webdriver.Chrome()
-driver.get(url)
-
-soup = BeautifulSoup(driver.page_source, "html.parser")
-table_rows = soup.find("div",{"class":"tabular-data-historic"}).find_all('tr')
+#soup = BeautifulSoup(driver.page_source, "html.parser")
+#table_rows = soup.find("div",{"class":"tabular-data-historic"}).find_all('tr')
 #print(table_rows)
-symbols=[]
 
-for tr in table_rows[5:-1]:
-    tds = tr.find_all("td")
-    symbol = str(tds[2].getText())[:-1]
-    #print(symbol)
-    symbols.append(symbol)
+f = open("symbols.txt", "r")
+symbols_string = f.read()
 
-print(len(symbols)) #144 scripts
+symbols=symbols_string.split(",")
+
+
+# for tr in table_rows[5:-1]:
+#     tds = tr.find_all("td")
+#     symbol = str(tds[2].getText())[:-1]
+#     #print(symbol)
+#     symbols.append(symbol)
+
+print("Number of symbols: ",len(symbols)) #144 scripts
 
 
 @app.route('/')
@@ -71,7 +76,7 @@ def api_1():
 
     start_date = extract_date(start)
     end_date = extract_date(end)
-    print(start_date)
+
     nse_df = get_history(symbol=symbol, start=start_date, end=end_date)
 
     return_data = {}
@@ -99,20 +104,57 @@ def api_2():
     growing=[]
     falling=[]
 
-    r = redis.Redis(host='localhost', port=6379, db=0, charset="utf-8", decode_responses=True)
+    r = redis.Redis(host = 'localhost', port = 6379, db = 0, charset = "utf-8", decode_responses = True)
 
-    #Start and End date are concatenated to form the hash
-    key_date = str(start_date)+str(end_date)
-    #Checking if hash exists in cache 
+    # CACHE 1
+
+    #Start date and End date are concatenated to form the hash
+    key_date = str(start_date) + str(end_date)
+    print(key_date)
+    # Checking if hash  exists in cache
     get_cachedvalue = r.hgetall(key_date)
 
     if(get_cachedvalue):
-        print("Cache 1 hit")
-        falling = get_cachedvalue["falling"].split(";")
-        growing = get_cachedvalue["growing"].split(";")
-        print("falling:",falling,len(falling),"growing:",growing,len(growing))
-        return jsonify(result = {"falling" : falling, "growing" : growing})
-    
+    	print("Cache 1 hit")
+    	falling = get_cachedvalue["falling"].split(";")
+    	growing = get_cachedvalue["growing"].split(";")
+    	print("falling: ", falling, len(falling), "growing: ", growing, len(growing))
+    	return jsonify(result = {"falling" : falling, "growing" : growing})
+
+    # CACHE 2
+
+    # Day 0
+    firstDate = date(1970,1,1)
+
+    # find score of start_date
+    min_score = (start_date - firstDate).days
+    print("Minimum Score: ", min_score)
+
+    # find score of end_date
+    max_score = (end_date - firstDate).days
+    print("Maximum Score: ", max_score)
+
+    # get the records from cache 2
+    get_cachedvalue2 = r.zrangebyscore("Cache2", min_score, max_score)
+
+    # check if the end date of records in less than end_date
+    eligible_records = []
+    if(get_cachedvalue2):
+    	for i in range(len(get_cachedvalue2)):
+    		members = json.loads(get_cachedvalue2[i])
+    		member_end = members["end"]
+    		member_range = members["range"]
+    		member_end = extract_date(member_end)
+    		end_diff = (end_date - member_end).days
+    		if(end_diff < 0):
+    			continue
+    		else:
+    			eligible_records.append(members)
+    		# choosing the record with maximum range
+    		if(eligible_records):
+    			best_record = (sorted(eligible_records, key = lambda i: i["range"], reverse = True))[0]
+    			print("Chosen Record: ", best_record)
+
     print("starting check")
 
     for symbol in symbols:
@@ -130,14 +172,27 @@ def api_2():
             elif(current_falling==0):
                 growing.append(symbol)
 
+    # adding to cache1
     growing1 = growing
     falling1 = falling
     falling_string = ";".join(falling1)
     growing_string = ";".join(growing1)
     to_add = {"falling" : falling_string, "growing" : growing_string}
-    #Add new set of values to the cache
-    r.hmset(key_date,to_add)
+    r.hmset(key_date, to_add)
 
+    # adding to cache2
+    cache2_record = dict()
+    cache2_record["start"] = str(start_date)
+    cache2_record["end"] = str(end_date)
+    cache2_record["range"] = (end_date - start_date).days
+    cache2_record["growing"] = growing_string
+    cache2_record["falling"] = falling_string
+
+    record = json.dumps(cache2_record)
+
+    r.zadd("Cache2", {record : min_score})
+
+    # returning the output
     print("falling:",falling,len(falling),"growing:",growing,len(growing))
     return jsonify(result = {"falling" : falling, "growing" : growing})
     
