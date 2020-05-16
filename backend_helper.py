@@ -6,3 +6,15 @@ def extract_date(date_string):
 
 def format_date(date_obj):
     return(date_obj.strftime("%Y-%m-%d"))
+
+def is_growing(close):
+	for i in range(0,len(close)-1):
+		if close[i]>close[i+1]:
+			return False
+	return True
+
+def is_falling(close):
+	for i in range(0,len(close)-1):
+		if close[i]<close[i+1]:
+			return False
+	return True
