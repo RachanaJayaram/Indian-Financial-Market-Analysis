@@ -12,7 +12,7 @@ import json
 from datetime import date
 import datetime
 
-from backend_helper import extract_date, format_date
+from backend_helper import extract_date, format_date,is_falling,is_growing
 import constants
 
 app = Flask(__name__)
@@ -29,7 +29,7 @@ app = Flask(__name__)
 #table_rows = soup.find("div",{"class":"tabular-data-historic"}).find_all('tr')
 #print(table_rows)
 
-f = open("symbols.txt", "r")
+f = open("Symbols.txt", "r")
 symbols_string = f.read()
 
 symbols=symbols_string.split(",")
@@ -121,6 +121,8 @@ def api_2():
     	print("falling: ", falling, len(falling), "growing: ", growing, len(growing))
     	return jsonify(result = {"falling" : falling, "growing" : growing})
 
+    print("Cache 1 Miss")
+
     # CACHE 2
 
     # Day 0
@@ -152,25 +154,70 @@ def api_2():
     			eligible_records.append(members)
     		# choosing the record with maximum range
     		if(eligible_records):
+    			print("Cache 2 Hit")
     			best_record = (sorted(eligible_records, key = lambda i: i["range"], reverse = True))[0]
     			print("Chosen Record: ", best_record)
 
-    print("starting check")
+    # checking for the remaining dates not present in the chosen record
+    if(len(eligible_records)>0):
+        #growing scripts
+        for i in best_record['growing'].split(';'):
+            if start_date!=extract_date(best_record['start']):
+                print("checking growing start",i)
+                nse_df = get_history(symbol=i, start=start_date, end=extract_date(best_record['start']) )
+                close=nse_df["Close"].tolist()
+                #print("close ",close)
+                if(not(is_growing(close))):
+                    continue
+            if(end_date!=extract_date(best_record['end'])):
+                print("checking growing end",i)
+                nse_df = get_history(symbol=i, start=extract_date(best_record['end']), end=end_date)
+                close=nse_df["Close"].tolist()
+                #print("close ",close)
+                if(is_growing(close)):
+                    growing.append(i)
+            else:
+                growing.append(i)
 
-    for symbol in symbols:
-        nse_df = get_history(symbol=symbol, start=start_date, end=end_date)
-        close=nse_df["Close"].tolist()
-        if(symbol=="PVR"):
-            print(close)
-        current_falling=0
-        if(len(close)>1):
-            for day in range(len(close[:-1])):
-                if(close[day]>close[day+1]):
-                    current_falling+=1
-            if(len(close)-1==current_falling):
-                falling.append(symbol)
-            elif(current_falling==0):
-                growing.append(symbol)
+        for i in best_record['falling'].split(';'):
+            
+            if start_date!=extract_date(best_record['start']):
+                print("checking falling start",i)
+                nse_df = get_history(symbol=i, start=start_date, end=extract_date(best_record['start']) )
+                close=nse_df["Close"].tolist()
+                if(not(is_falling(close))):
+                    continue
+            if(end_date!=extract_date(best_record['end'])):
+                    print("checking falling end",i)
+                    nse_df = get_history(symbol=i, start=extract_date(best_record['end']), end=end_date )
+                    close=nse_df["Close"].tolist()
+                    if(is_falling(close)):
+                        falling.append(i)
+            else:
+                falling.append(i)
+
+    # Cache 2 Miss
+    # Checking using NSEpy
+    else:
+
+    	print("Cache 2 Miss")
+
+        print("starting check")
+
+        for symbol in symbols:
+            nse_df = get_history(symbol=symbol, start=start_date, end=end_date)
+            close=nse_df["Close"].tolist()
+            if(symbol=="PVR"):
+                print(close)
+            current_falling=0
+            if(len(close)>1):
+                for day in range(len(close[:-1])):
+                    if(close[day]>close[day+1]):
+                        current_falling+=1
+                if(len(close)-1==current_falling):
+                    falling.append(symbol)
+                elif(current_falling==0):
+                    growing.append(symbol)
 
     # adding to cache1
     growing1 = growing
@@ -178,6 +225,7 @@ def api_2():
     falling_string = ";".join(falling1)
     growing_string = ";".join(growing1)
     to_add = {"falling" : falling_string, "growing" : growing_string}
+    print("Adding to Cache 1")
     r.hmset(key_date, to_add)
 
     # adding to cache2
@@ -190,6 +238,7 @@ def api_2():
 
     record = json.dumps(cache2_record)
 
+    print("Adding to Cache 2")
     r.zadd("Cache2", {record : min_score})
 
     # returning the output
