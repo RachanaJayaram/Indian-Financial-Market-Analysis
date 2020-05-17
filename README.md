@@ -13,6 +13,10 @@ Install Selenium and chrome webdriver(for JS loaded web scraping)
 pip install selenium
 sudo apt-get install chromium-chromedriver
 ```
+Install redis
+```
+pip install redis
+```
 
 Run the server.
 ```
@@ -30,6 +34,20 @@ Index page is at http://127.0.0.1:5000/
 
 ![4](screenshots/Api2.png)
 
+5. Cache 1 has been implemented using redis hashes -
+    +  The key is hashed form of start and end date. 
+    +  HGETALL(hash_key) is used to get the value from the cache.
+    +  On Cache 1 hit, the growing and falling scripts are returned.
+    +  On Cache 1 miss, cache 2 is queried.
+   
+6. Cache 2 has been implemented using redis sorted sets.
+    +  Scores for the members of the sorted sets are taken as the number of days from the first day, i.e. 01-01-1970. Example: Score for 07-01-1970 is 6
+    +  ZRANGEBYSCORE(set_key, start_date_score, end_date_score) is used to get the records from cache2, between the query's start date and the query's end date.
+    +  These returned records are checked for eligibility, by checking if their end dates are within the query's end date.
+    +  If there are eligible records, then the record with the highest range is chosen.
+    +  On Cache 2 miss, NSEpy is used to get the growing and falling scripts.
+    +  HMSET(hash_key, member_dict) is used to add this record to Cache 1.
+    +  ZADD(set_key, {member_string : start_date_score}) is used to add this record to Cache 2.
 ***
 
 ## Introduction
